@@ -1,1 +1,37 @@
 # Python dependencies — pin versions before deploying (e.g. fastapi==0.111.0).
+# Web framework
+fastapi
+uvicorn[standard]
+
+# Database
+sqlalchemy
+alembic
+psycopg2-binary
+
+# Redis
+redis
+
+# Auth
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt
+
+# AWS S3
+boto3
+
+# NLP & Search
+nltk
+scikit-learn
+numpy
+
+# PDF extraction
+pymupdf
+
+# File handling
+python-multipart
+
+# Config
+pydantic-settings
+
+# Process manager (production)
+gunicorn
