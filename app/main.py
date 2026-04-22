@@ -18,17 +18,32 @@ logger = logging.getLogger(__name__)
  
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Startup: ingest static dataset and build index."""
+    """Startup: rebuild index from existing DB documents."""
     from app.ingestion.load_static import ingest_static_dataset
+    from app.services.index_service import IndexService
+
     db = SessionLocal()
     try:
+        # Load static dataset if JSON exists (silently skips if not found)
         ingest_static_dataset(db)
+        print("STARTUP: static ingest done")
+
+        # Always rebuild in-memory index from whatever is in the DB
+        # This restores _vectorizer + _doc_matrix after every server restart
+        logger.info("Rebuilding in-memory index from database...")
+        index_svc = IndexService(db)
+        print("STARTUP: IndexService created") #for debugging
+        index_svc.build_index_from_db()
+        print("STARTUP: build_index_from_db done") #for debugging
+        logger.info("Index ready.")
     except Exception as e:
-        logger.error("Startup ingestion failed: %s", e)
+        import traceback
+        print("Startup failed:", e)
+        print(traceback.format_exc()) 
+        # logger.error("Startup failed: %s", e)
     finally:
         db.close()
-    yield  # Server runs here
-    # Shutdown logic (if any) goes here
+    yield
  
  
 settings = get_settings()
@@ -39,7 +54,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
  
-# ── CORS ──────────────────────────────────────────────────────────────────
+# CORS 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins_list,
@@ -48,7 +63,7 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization"],
 )
  
-# ── Routers ───────────────────────────────────────────────────────────────
+# Routers 
 from app.api import auth, search, documents  # noqa: E402
  
 app.include_router(auth.router)

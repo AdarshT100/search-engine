@@ -26,14 +26,11 @@ from app.services.search_service import SearchService
 
 # ---------------------------------------------------------------------------
 # Router
-# ---------------------------------------------------------------------------
 
 router = APIRouter(prefix="/api", tags=["search"])
 
 # ---------------------------------------------------------------------------
 # Error helper  (mirrors the pattern used in app/api/auth.py)
-# ---------------------------------------------------------------------------
-
 
 def _error(code: str, message: str, status_code: int) -> HTTPException:
     return HTTPException(
@@ -44,8 +41,6 @@ def _error(code: str, message: str, status_code: int) -> HTTPException:
 
 # ---------------------------------------------------------------------------
 # Response / request models
-# ---------------------------------------------------------------------------
-
 
 class SearchResult(BaseModel):
     doc_id: str
@@ -71,7 +66,6 @@ class AutocompleteResponse(BaseModel):
 
 # ---------------------------------------------------------------------------
 # GET /api/search
-# ---------------------------------------------------------------------------
 
 
 @router.get(
@@ -145,7 +139,6 @@ def search(
 
 # ---------------------------------------------------------------------------
 # GET /api/autocomplete
-# ---------------------------------------------------------------------------
 
 
 @router.get(
@@ -198,8 +191,6 @@ def autocomplete(
 
 # ---------------------------------------------------------------------------
 # Trie lookup helper
-# ---------------------------------------------------------------------------
-
 
 def _flat_trie_lookup(trie: Any, prefix: str) -> list[str]:
     """

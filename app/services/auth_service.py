@@ -12,9 +12,12 @@ from datetime import datetime, timedelta, timezone
 import bcrypt
 from jose import JWTError, jwt
 
+from app.core.config import get_settings
+
 # ── Config ────────────────────────────────────────────────────────────────────
 
-SECRET_KEY: str = os.environ["SECRET_KEY"]  # Raises KeyError at startup if missing — intentional
+settings = get_settings()
+SECRET_KEY: str = settings.SECRET_KEY
 ALGORITHM: str = "HS256"
 ACCESS_TOKEN_TTL_MINUTES: int = 15
 REFRESH_TOKEN_TTL_DAYS: int = 7

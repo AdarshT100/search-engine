@@ -43,7 +43,6 @@ class IndexService:
 
     # ------------------------------------------------------------------
     # 1. Build full index
-    # ------------------------------------------------------------------
 
     def build_full_index(self, docs: list[Document]) -> None:
         """
@@ -80,68 +79,22 @@ class IndexService:
         self._prime_redis_cache()
 
     # ------------------------------------------------------------------
-    # 2. Incremental update for a single new document
-    # ------------------------------------------------------------------
+    # 2. Full rebuild for every new upload
 
     def update_index(self, doc: Document) -> None:
         """
-        Add a single newly uploaded document to the in-memory index and
-        persist its term entries to PostgreSQL + Redis.
-
-        IDF scores for existing documents are NOT recalculated — known
-        approximation acceptable for portfolio scope (see SDD Section 6.3).
+        Add a single newly uploaded document to the in-memory index.
+        Rebuilds the full index to include new vocabulary terms.
         """
         global _vectorizer, _doc_matrix, _doc_ids
 
-        if _vectorizer is None:
-            # No index built yet — treat this as a full build
-            self.build_full_index([doc])
-            return
-
-        tokens = self.nlp.process(doc.body)
-        if not tokens:
-            return
-
-        token_str = " ".join(tokens)
-        doc_id = str(doc.id)
-
-        # Transform new document using the existing fitted vocabulary
-        new_vec = _vectorizer.transform([token_str])  # (1 × n_features)
-
-        # Append to in-memory matrix and id list
-        from scipy.sparse import vstack
-        _doc_matrix = vstack([_doc_matrix, new_vec])
-        _doc_ids.append(doc_id)
-
-        # Persist only the new document's terms to PostgreSQL
-        feature_names = _vectorizer.get_feature_names_out()
-        new_vec_coo = new_vec.tocoo()
-
-        # Delete stale entries for this doc (re-upload scenario)
-        self.db.query(IndexEntry).filter(IndexEntry.doc_id == doc_id).delete()
-
-        entries = []
-        for col_idx, score in zip(new_vec_coo.col, new_vec_coo.data):
-            if score > 0:
-                entries.append(IndexEntry(
-                    term=feature_names[col_idx],
-                    doc_id=doc_id,
-                    tf_idf_score=float(score),
-                    positions=None,
-                ))
-        self.db.bulk_save_objects(entries)
-        self.db.commit()
-
-        # Invalidate Redis keys only for terms present in this document
-        affected_terms = [feature_names[i] for i in new_vec_coo.col if new_vec_coo.data[list(new_vec_coo.col).index(i)] > 0]
-        pipe = self.redis.pipeline()
-        for term in affected_terms:
-            pipe.delete(f"index:{term}")
-        pipe.execute()
+        # Always do a full rebuild so new vocabulary terms are included
+        all_docs = self.db.query(Document).all()
+        if all_docs:
+            self.build_full_index(all_docs)
 
     # ------------------------------------------------------------------
     # 3. Redis-first term lookup
-    # ------------------------------------------------------------------
 
     def get_index_from_cache(self, term: str) -> list[dict]:
         """
@@ -176,7 +129,6 @@ class IndexService:
 
     # ------------------------------------------------------------------
     # 4. Persist full in-memory index to PostgreSQL
-    # ------------------------------------------------------------------
 
     def sync_to_postgres(self, docs: list[Document]) -> None:
         """
@@ -223,7 +175,6 @@ class IndexService:
 
     # ------------------------------------------------------------------
     # 5. Internal — prime Redis from in-memory matrix after full build
-    # ------------------------------------------------------------------
 
     def _prime_redis_cache(self) -> None:
         """
@@ -258,7 +209,6 @@ class IndexService:
 
     # ------------------------------------------------------------------
     # 6. Helper — get fitted vectorizer and doc matrix (used by SearchService)
-    # ------------------------------------------------------------------
 
     @staticmethod
     def get_vectorizer_and_matrix():
@@ -270,3 +220,12 @@ class IndexService:
             (TfidfVectorizer, sparse matrix, list[str]) or (None, None, [])
         """
         return _vectorizer, _doc_matrix, _doc_ids
+    
+    def build_index_from_db(self) -> None:
+        """
+        Load all documents from PostgreSQL and rebuild the in-memory
+        TF-IDF index. Called on server startup to restore state after restart.
+        """
+        docs = self.db.query(Document).all()
+        if docs:
+            self.build_full_index(docs)

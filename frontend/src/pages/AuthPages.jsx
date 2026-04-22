@@ -118,24 +118,29 @@ export default function AuthPage({ onAuthSuccess, navigateToUpload }) {
   };
 
   /* ── logged-in state (no router provided) ────────────────────────── */
-
-  if (tokens && !navigateToUpload) {
-    return (
-      <div style={styles.page}>
-        <div style={styles.card}>
-          <p style={{ ...styles.successBanner, marginBottom: "1.25rem" }}>
-            Logged in successfully.
-          </p>
-          <p style={{ fontSize: 14, color: "var(--color-text-secondary)", margin: "0 0 1rem" }}>
-            Your session is active. Tokens are held in memory only.
-          </p>
-          <a href="/upload" style={styles.uploadLink}>
-            Go to Upload →
-          </a>
-        </div>
+if (tokens && !navigateToUpload) {
+  return (
+    <div style={styles.page}>
+      <div style={styles.card}>
+        <p style={{ ...styles.successBanner, marginBottom: "1.25rem" }}>
+          Logged in successfully.
+        </p>
+        <p style={{ fontSize: 14, color: "var(--color-text-secondary)", margin: "0 0 1rem" }}>
+          Your session is active. Tokens are held in memory only.
+        </p>
+        {/* ✅ FIXED: was <a href="/upload"> which caused full page reload */}
+        <button
+          style={styles.uploadLink}
+          onClick={() => {
+            if (onAuthSuccess) onAuthSuccess(tokens);
+          }}
+        >
+          Go to Upload →
+        </button>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   /* ── main form ───────────────────────────────────────────────────── */
 

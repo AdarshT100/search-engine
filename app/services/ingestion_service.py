@@ -28,9 +28,8 @@ class IngestionService:
         self.db = db
         self.nlp = NLPPipeline()
 
-    # ------------------------------------------------------------------ #
-    #  Text Extraction                                                     #
-    # ------------------------------------------------------------------ #
+    # ------------------------------------------------------------------   
+    #  Text Extraction                                                     
 
     def extract_text_txt(self, file: bytes) -> str:
         """
@@ -70,8 +69,7 @@ class IngestionService:
         return full_text
 
     # ------------------------------------------------------------------ #
-    #  Upload Ingestion                                                    #
-    # ------------------------------------------------------------------ #
+    #  Upload Ingestion                                                    
 
     def ingest_uploaded_file(
         self,

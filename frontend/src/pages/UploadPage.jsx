@@ -133,7 +133,6 @@ function DocumentRow({ doc, onDelete, deleting }) {
 }
 
 /* ─── Main component ─────────────────────────────────────────────── */
-
 /*
   Props:
     accessToken  — JWT access token string from parent/context (required for

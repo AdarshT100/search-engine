@@ -45,7 +45,6 @@ DEFAULT_DATASET_PATH = Path(__file__).parent / "data" / "static_articles.json"
 
 # ---------------------------------------------------------------------------
 # Main entry point
-# ---------------------------------------------------------------------------
 
 def ingest_static_dataset(
     db: Session,
@@ -85,8 +84,8 @@ def ingest_static_dataset(
 
     # --- Load JSON file ---
     if not path.exists():
-        logger.error("Static dataset not found at: %s", path)
-        raise FileNotFoundError(f"Static dataset not found: {path}")
+        logger.warning("Static dataset not found at: %s", path)
+        return 0
 
     with open(path, "r", encoding="utf-8") as f:
         raw_articles = json.load(f)
@@ -158,7 +157,6 @@ def ingest_static_dataset(
 
 # ---------------------------------------------------------------------------
 # Internal helpers
-# ---------------------------------------------------------------------------
 
 def _rebuild_index_from_db(db: Session) -> None:
     """
@@ -201,7 +199,6 @@ def _parse_datetime(value: str | None) -> datetime:
 
 # ---------------------------------------------------------------------------
 # CLI entry point — run directly to force re-ingest
-# ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
     import sys

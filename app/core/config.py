@@ -9,13 +9,13 @@ from functools import lru_cache
  
 class Settings(BaseSettings):
     # PostgreSQL
-    DATABASE_URL: str = ""
+    DATABASE_URL: str 
  
     # Redis
-    REDIS_URL: str = ""
+    REDIS_URL: str = "redis://localhost:6379/0"
  
     # JWT (also read directly by auth_service via os.environ)
-    SECRET_KEY: str =""
+    SECRET_KEY: str 
  
     # AWS S3
     AWS_ACCESS_KEY_ID: str = ""
@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     AWS_REGION: str = "ap-south-1"
  
     # CORS
-    ALLOWED_ORIGINS: str = ""
+    ALLOWED_ORIGINS: str = "http://localhost:5173"
  
     @property
     def allowed_origins_list(self) -> list[str]:

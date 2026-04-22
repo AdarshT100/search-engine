@@ -19,6 +19,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.api.auth import get_current_user_id
+from app.data import db
 from app.data.db import get_db
 from app.data.redis_client import get_redis
 from app.data.s3_client import delete_file
@@ -324,6 +325,9 @@ def delete_document(
                 "S3 delete failed for key=%s doc_id=%s: %s",
                 doc.s3_key, doc_id, exc,
             )
+
+    # ── 4b. Delete upload_log rows first (NOT NULL FK constraint) ─────── #
+    db.query(UploadLog).filter(UploadLog.doc_id == doc_uuid).delete()
 
     # ── 5. Delete document row (CASCADE cleans index_entries) ──────────── #
     db.delete(doc)

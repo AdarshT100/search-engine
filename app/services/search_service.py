@@ -14,11 +14,9 @@ Dependencies:
 
 from __future__ import annotations
 
-import json
 import math
 from typing import Optional
 
-import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from sqlalchemy.orm import Session
 
@@ -28,11 +26,9 @@ from app.services.index_service import IndexService
 
 # ---------------------------------------------------------------------------
 # Constants
-# ---------------------------------------------------------------------------
 
 RESULTS_PER_PAGE = 10
 SNIPPET_LENGTH = 150
-
 
 class SearchService:
     """
@@ -52,7 +48,6 @@ class SearchService:
 
     # ------------------------------------------------------------------
     # Public interface
-    # ------------------------------------------------------------------
 
     def search(
         self,
@@ -183,7 +178,6 @@ class SearchService:
 
     # ------------------------------------------------------------------
     # Private helpers
-    # ------------------------------------------------------------------
 
     def _generate_snippet(self, body: str, tokens: list[str]) -> str:
         """
