@@ -1,31 +1,58 @@
-import { useState } from 'react'
-import SearchPage from './pages/SearchPage.jsx'
-import AuthPage from './pages/AuthPages.jsx'
-import UploadPage from './pages/UploadPage.jsx'
+/**
+ * App.jsx
+ * Findly — Search Engine
+ *
+ * Root component. Wraps the app in AuthProvider and React Router.
+ * Renders the Navbar once at the app level; hides it on the landing page (/).
+ */
 
-function App() {
-  const [page, setPage] = useState('search')
-  const [accessToken, setAccessToken] = useState(null)
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
 
-  // ✅ FIXED: store token AND switch page in one shot
-  const handleLogin = (tokens) => {
-    setAccessToken(tokens.access_token)
-    setPage('upload')
-  }
+import Navbar      from './components/Navbar';
+import LandingPage from './pages/LandingPage';
+import SearchPage  from './pages/SearchPage';
+import AuthPage    from './pages/AuthPages';
+import UploadPage  from './pages/UploadPage';
+
+/** Routes where the Navbar should be hidden. */
+const HIDDEN_NAV_ROUTES = ['/'];
+
+/**
+ * AppShell
+ * Rendered inside BrowserRouter so it can call useLocation().
+ * Determines whether to show the Navbar based on the current route,
+ * then renders the route tree.
+ */
+function AppShell() {
+  const location = useLocation();
+  const showNav = !HIDDEN_NAV_ROUTES.includes(location.pathname);
 
   return (
-    <div>
-      <nav style={{ padding: '1rem', borderBottom: '1px solid #ccc', display: 'flex', gap: '1rem' }}>
-        <button onClick={() => setPage('search')}>Search</button>
-        <button onClick={() => setPage('auth')}>Login / Register</button>
-        <button onClick={() => setPage('upload')}>Upload</button>
-      </nav>
+    <>
+      <Navbar showNav={showNav} />
 
-      {page === 'search' && <SearchPage />}
-      {page === 'auth' && <AuthPage onAuthSuccess={handleLogin} />}
-      {page === 'upload' && <UploadPage accessToken={accessToken} />}
-    </div>
-  )
+      <Routes>
+        <Route path="/"       element={<LandingPage />} />
+        <Route path="/search" element={<SearchPage />}  />
+        <Route path="/auth"   element={<AuthPage />}    />
+        <Route path="/upload" element={<UploadPage />}  />
+      </Routes>
+    </>
+  );
 }
 
-export default App
+/**
+ * App
+ * Top-level component. Provides AuthContext to the entire tree
+ * and wraps everything in BrowserRouter.
+ */
+export default function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <AppShell />
+      </BrowserRouter>
+    </AuthProvider>
+  );
+}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useAuth } from "../context/AuthContext";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -133,13 +134,10 @@ function DocumentRow({ doc, onDelete, deleting }) {
 }
 
 /* ─── Main component ─────────────────────────────────────────────── */
-/*
-  Props:
-    accessToken  — JWT access token string from parent/context (required for
-                   upload + document list endpoints). If absent, a warning
-                   is shown and the upload form is disabled.
-*/
-export default function UploadPage({ accessToken }) {
+// using use
+export default function UploadPage() {
+  // Get auth token from context instead of relying on props as before
+  const { accessToken } = useAuth();
   // File selection
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileError, setFileError] = useState("");      // client-side file validation

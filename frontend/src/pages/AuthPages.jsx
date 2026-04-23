@@ -1,19 +1,13 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-/* ─── Prop contract ───────────────────────────────────────────────────
-   AuthPage expects two optional props from a parent / router:
-     onAuthSuccess(tokens)  — called with { access_token, refresh_token }
-                              after a successful login. Parent stores tokens
-                              in app-level state and renders UploadPage.
-     navigateToUpload()     — if you are using React Router, pass
-                              () => navigate('/upload') here. If omitted,
-                              AuthPage shows an inline "Go to Upload" button
-                              instead of redirecting.
-   ─────────────────────────────────────────────────────────────────── */
+export default function AuthPage() {
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
-export default function AuthPage({ onAuthSuccess, navigateToUpload }) {
   // "login" | "register"
   const [mode, setMode] = useState("login");
 
@@ -23,14 +17,11 @@ export default function AuthPage({ onAuthSuccess, navigateToUpload }) {
 
   // UI state
   const [loading, setLoading] = useState(false);
-  const [fieldError, setFieldError] = useState("");   // client-side validation
-  const [apiError, setApiError] = useState("");        // server error message
-  const [successMsg, setSuccessMsg] = useState("");    // post-register confirmation
+  const [fieldError, setFieldError] = useState("");  // client-side validation
+  const [apiError, setApiError] = useState("");       // server error message
+  const [successMsg, setSuccessMsg] = useState("");   // post-register confirmation
 
-  // Tokens stored in memory only — never written to localStorage
-  const [tokens, setTokens] = useState(null);          // { access_token, refresh_token }
-
-  /* ── helpers ────────────────────────────────────────────────────── */
+  /* ── helpers ─────────────────────────────────────────────────────── */
 
   const resetMessages = () => {
     setFieldError("");
@@ -43,7 +34,6 @@ export default function AuthPage({ onAuthSuccess, navigateToUpload }) {
     setEmail("");
     setPassword("");
     resetMessages();
-    setTokens(null);
   };
 
   // Basic client-side validation before hitting the network
@@ -55,7 +45,7 @@ export default function AuthPage({ onAuthSuccess, navigateToUpload }) {
     return null;
   };
 
-  /* ── submit ─────────────────────────────────────────────────────── */
+  /* ── submit ──────────────────────────────────────────────────────── */
 
   const handleSubmit = async () => {
     resetMessages();
@@ -68,9 +58,10 @@ export default function AuthPage({ onAuthSuccess, navigateToUpload }) {
 
     setLoading(true);
 
-    const endpoint = mode === "login"
-      ? `${BASE_URL}/api/auth/login`
-      : `${BASE_URL}/api/auth/register`;
+    const endpoint =
+      mode === "login"
+        ? `${BASE_URL}/api/auth/login`
+        : `${BASE_URL}/api/auth/register`;
 
     try {
       const res = await fetch(endpoint, {
@@ -93,18 +84,12 @@ export default function AuthPage({ onAuthSuccess, navigateToUpload }) {
         setMode("login");
         setPassword("");
       } else {
-        // Login succeeded — store tokens in memory only
-        const received = {
-          access_token: data.access_token,
-          refresh_token: data.refresh_token,
-        };
-        setTokens(received);
-
-        // Notify parent so it can store tokens at app level
-        if (onAuthSuccess) onAuthSuccess(received);
-
-        // Navigate if a router function was provided
-        if (navigateToUpload) navigateToUpload();
+        // Login succeeded — update global auth state via context, then navigate
+        login(
+          { access_token: data.access_token, refresh_token: data.refresh_token },
+          email.trim()
+        );
+        navigate("/search");
       }
     } catch {
       setApiError("Could not reach the server. Please check your connection.");
@@ -117,32 +102,7 @@ export default function AuthPage({ onAuthSuccess, navigateToUpload }) {
     if (e.key === "Enter") handleSubmit();
   };
 
-  /* ── logged-in state (no router provided) ────────────────────────── */
-if (tokens && !navigateToUpload) {
-  return (
-    <div style={styles.page}>
-      <div style={styles.card}>
-        <p style={{ ...styles.successBanner, marginBottom: "1.25rem" }}>
-          Logged in successfully.
-        </p>
-        <p style={{ fontSize: 14, color: "var(--color-text-secondary)", margin: "0 0 1rem" }}>
-          Your session is active. Tokens are held in memory only.
-        </p>
-        {/* ✅ FIXED: was <a href="/upload"> which caused full page reload */}
-        <button
-          style={styles.uploadLink}
-          onClick={() => {
-            if (onAuthSuccess) onAuthSuccess(tokens);
-          }}
-        >
-          Go to Upload →
-        </button>
-      </div>
-    </div>
-  );
-}
-
-  /* ── main form ───────────────────────────────────────────────────── */
+  /* ── render ──────────────────────────────────────────────────────── */
 
   return (
     <div style={styles.page}>
@@ -170,11 +130,9 @@ if (tokens && !navigateToUpload) {
         </div>
 
         {/* Post-register success */}
-        {successMsg && (
-          <p style={styles.successBanner}>{successMsg}</p>
-        )}
+        {successMsg && <p style={styles.successBanner}>{successMsg}</p>}
 
-        {/* Fields */}
+        {/* Email field */}
         <div style={styles.fieldGroup}>
           <label style={styles.label} htmlFor="auth-email">Email</label>
           <input
@@ -189,6 +147,7 @@ if (tokens && !navigateToUpload) {
           />
         </div>
 
+        {/* Password field */}
         <div style={styles.fieldGroup}>
           <label style={styles.label} htmlFor="auth-password">
             Password
@@ -246,7 +205,7 @@ if (tokens && !navigateToUpload) {
   );
 }
 
-/* ─── Styles ─────────────────────────────────────────────────────────── */
+/* ── Styles ──────────────────────────────────────────────────────────── */
 
 const styles = {
   page: {
@@ -361,11 +320,5 @@ const styles = {
     color: "var(--color-text-info)",
     cursor: "pointer",
     textDecoration: "underline",
-  },
-  uploadLink: {
-    display: "inline-block",
-    fontSize: 14,
-    color: "var(--color-text-info)",
-    textDecoration: "none",
   },
 };
