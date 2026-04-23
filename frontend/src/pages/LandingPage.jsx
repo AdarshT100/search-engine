@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import appScreenshot from '../assets/app-screenshot.png';
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -58,10 +59,9 @@ const LandingPage = () => {
 
           <div className="hero-image-wrapper">
             <img
-              src="/src/assets/app-screenshot.png"
+              src={appScreenshot}
               alt="Findly search interface"
               className="hero-image"
-              onError={(e) => { e.target.style.display = 'none'; }}
             />
           </div>
         </section>
@@ -72,7 +72,7 @@ const LandingPage = () => {
 
           <div className="features-grid">
             <div className="feature-card">
-              <div className="icon">🔍</div>
+              <div className="icon" align="center">🔍</div>
               <h3>Inverted Index</h3>
               <p>
                 Blazing-fast lookup across thousands of documents using a purpose-built inverted index.
@@ -80,7 +80,7 @@ const LandingPage = () => {
             </div>
 
             <div className="feature-card">
-              <div className="icon">📊</div>
+              <div className="icon" align="center">📊</div>
               <h3>TF-IDF Ranking</h3>
               <p>
                 Results ranked by relevance, not recency — the same algorithm powering real search engines.
@@ -88,7 +88,7 @@ const LandingPage = () => {
             </div>
 
             <div className="feature-card">
-              <div className="icon">📁</div>
+              <div className="icon" align="center">📤</div>
               <h3>Upload Your Docs</h3>
               <p>
                 Upload TXT or PDF files and make them instantly searchable alongside the existing dataset.
@@ -244,6 +244,7 @@ const LandingPage = () => {
         .feature-card .icon {
           font-size: 28px;
           margin-bottom: 12px;
+          text-align: center;
         }
 
         .feature-card h3 {
