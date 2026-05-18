@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 from app.data.db import get_db
 from app.data.models import User
 from app.services.auth_service import (
+    DUMMY_PASSWORD_HASH,
     InvalidTokenError,
     TokenExpiredError,
     create_token_pair,
@@ -147,9 +148,8 @@ def login(
     user = db.query(User).filter(User.email == body.email).first()
 
     # Constant-time path: always call verify_password even if user not found
-    # to prevent timing-based user enumeration
-    dummy_hash = "$2b$12$invalidhashpadding000000000000000000000000000000000000000"
-    stored_hash = user.password_hash if user else dummy_hash
+    # to prevent timing-based user enumeration.
+    stored_hash = user.password_hash if user else DUMMY_PASSWORD_HASH
 
     password_valid = verify_password(body.password, stored_hash)
 

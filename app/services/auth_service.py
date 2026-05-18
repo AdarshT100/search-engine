@@ -40,6 +40,10 @@ def hash_password(plain_password: str) -> str:
     hashed = bcrypt.hashpw(password_bytes, salt)
     return hashed.decode("utf-8")
 
+# A valid bcrypt hash that can be used for dummy verification when the user is missing.
+# This keeps the login path constant-time without raising an invalid salt error.
+DUMMY_PASSWORD_HASH = bcrypt.hashpw(b"invalid-password", bcrypt.gensalt(rounds=BCRYPT_COST_FACTOR)).decode("utf-8")
+
 
 def verify_password(plain_password: str, password_hash: str) -> bool:
     """

@@ -46,57 +46,98 @@ export default function AuthPage() {
   };
 
   /* ── submit ──────────────────────────────────────────────────────── */
+const handleSubmit = async () => {
+  resetMessages();
 
-  const handleSubmit = async () => {
-    resetMessages();
+  const validationError = validate();
+  if (validationError) {
+    setFieldError(validationError);
+    return;
+  }
 
-    const validationError = validate();
-    if (validationError) {
-      setFieldError(validationError);
+  setLoading(true);
+
+  const endpoint =
+    mode === "login"
+      ? `${BASE_URL}/api/auth/login`
+      : `${BASE_URL}/api/auth/register`;
+
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email.trim(), password }),
+    });
+
+    // Safely parse JSON only if present
+    let data = null;
+    const ct = res.headers.get("content-type") || "";
+    if (ct.includes("application/json")) {
+      try {
+        data = await res.json();
+      } catch (err) {
+        data = null;
+      }
+    } else {
+      // fallback: try to read text message
+      try {
+        const text = await res.text();
+        if (text) data = { error: { message: text } };
+      } catch {}
+    }
+
+    // Handle non-OK responses with sensible messages
+    const errorPayload = data?.error ?? data?.detail?.error;
+    const serverCode = errorPayload?.code;
+    const serverMsg = errorPayload?.message || data?.message;
+
+    if (!res.ok) {
+      if (res.status === 404 || serverCode === "USER_NOT_FOUND") {
+        setApiError("User not registered. Please register first.");
+      } else if (res.status === 401) {
+        if (mode === "login") {
+          setApiError("Invalid email or password. If you don’t have an account yet, please register.");
+        } else {
+          setApiError(serverMsg || "Unauthorized.");
+        }
+      } else if (serverMsg) {
+        setApiError(serverMsg);
+      } else {
+        setApiError(`Server returned ${res.status} ${res.statusText}`);
+      }
       return;
     }
 
-    setLoading(true);
-
-    const endpoint =
-      mode === "login"
-        ? `${BASE_URL}/api/auth/login`
-        : `${BASE_URL}/api/auth/register`;
-
-    try {
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), password }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        // Structured API error envelope: { error: { code, message, status } }
-        setApiError(data?.error?.message || "Something went wrong. Please try again.");
-        return;
-      }
-
-      if (mode === "register") {
-        // Registration succeeded — prompt user to log in
-        setSuccessMsg("Account created! You can now log in.");
-        setMode("login");
-        setPassword("");
-      } else {
-        // Login succeeded — update global auth state via context, then navigate
-        login(
-          { access_token: data.access_token, refresh_token: data.refresh_token },
-          email.trim()
-        );
-        navigate("/search");
-      }
-    } catch {
-      setApiError("Could not reach the server. Please check your connection.");
-    } finally {
-      setLoading(false);
+    // Success paths
+    //condition to check if the user is authorize or not if the access token and refresh token is not present in the response then show the error message
+    if(!data?.access_token || !data?.refresh_token) {
+      setApiError("Unexpected server response. Please try again later.");
+      return;
     }
-  };
+    // validation of access token and refresh token if they are not string or empty then show the error message
+    if (typeof data.access_token !== "string" || typeof data.refresh_token !== "string" || !data.access_token.trim() || !data.refresh_token.trim()) {
+      setApiError("Received invalid tokens from server. Please try again later.");
+      return;
+    }
+
+    if (mode === "register") {
+      setSuccessMsg("Account created! You can now log in.");
+      setMode("login");
+      setPassword("");
+    } else {
+      login(
+        { access_token: data.access_token, refresh_token: data.refresh_token },
+        email.trim()
+      );
+      navigate("/search");
+    }
+  } catch (err) {
+    // Only real network/CORS/fetch failures reach here
+    setApiError("Could not reach the server. Please check your connection.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") handleSubmit();
