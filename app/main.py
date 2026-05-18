@@ -64,7 +64,7 @@ app.add_middleware(
 )
  
 # Routers 
-from app.api import auth, search, documents  # noqa: E402
+from app.api import auth, search, documents  # noqa: E402 
  
 app.include_router(auth.router)
 app.include_router(search.router)
