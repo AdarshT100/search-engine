@@ -108,29 +108,28 @@ const handleSubmit = async () => {
       return;
     }
 
-    // Success paths
-    //condition to check if the user is authorize or not if the access token and refresh token is not present in the response then show the error message
-    if(!data?.access_token || !data?.refresh_token) {
+    if (mode === "register") {
+      setSuccessMsg("Account created! You can now log in.");
+      setMode("login");
+      setPassword("");
+      return;
+    }
+
+    // Login success paths require tokens
+    if (!data?.access_token || !data?.refresh_token) {
       setApiError("Unexpected server response. Please try again later.");
       return;
     }
-    // validation of access token and refresh token if they are not string or empty then show the error message
     if (typeof data.access_token !== "string" || typeof data.refresh_token !== "string" || !data.access_token.trim() || !data.refresh_token.trim()) {
       setApiError("Received invalid tokens from server. Please try again later.");
       return;
     }
 
-    if (mode === "register") {
-      setSuccessMsg("Account created! You can now log in.");
-      setMode("login");
-      setPassword("");
-    } else {
-      login(
-        { access_token: data.access_token, refresh_token: data.refresh_token },
-        email.trim()
-      );
-      navigate("/search");
-    }
+    login(
+      { access_token: data.access_token, refresh_token: data.refresh_token },
+      email.trim()
+    );
+    navigate("/search");
   } catch (err) {
     // Only real network/CORS/fetch failures reach here
     setApiError("Could not reach the server. Please check your connection.");
